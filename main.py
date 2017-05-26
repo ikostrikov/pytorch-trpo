@@ -63,8 +63,7 @@ def select_action(state):
     action = torch.normal(action_mean, action_std)
     return action
 
-def update_params
-(batch):
+def update_params(batch):
     rewards = torch.Tensor(batch.reward)
     masks = torch.Tensor(batch.mask)
     actions = torch.Tensor(np.concatenate(batch.action, 0))
