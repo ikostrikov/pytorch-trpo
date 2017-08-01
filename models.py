@@ -1,7 +1,3 @@
-import numpy as np
-import tensorflow as tf
-from tensorflow.contrib import slim
-
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
