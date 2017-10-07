@@ -1,25 +1,19 @@
 import argparse
-import sys
-from collections import namedtuple
 from itertools import count
 
 import gym
-import numpy as np
 import scipy.optimize
-from gym import wrappers
 
 import torch
-import torch.autograd as autograd
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision.transforms as T
 from models import *
 from replay_memory import Memory
 from running_state import ZFilter
 from torch.autograd import Variable
 from trpo import trpo_step
 from utils import *
+
+torch.utils.backcompat.broadcast_warning.enabled = True
+torch.utils.backcompat.keepdim_warning.enabled = True
 
 torch.set_default_tensor_type('torch.DoubleTensor')
 
@@ -86,7 +80,6 @@ def update_params(batch):
         prev_value = values.data[i, 0]
         prev_advantage = advantages[i, 0]
 
-    values_ = value_net(Variable(states))
     targets = Variable(returns)
 
     # Original code uses the same LBFGS to optimize the value loss
@@ -112,7 +105,7 @@ def update_params(batch):
     advantages = (advantages - advantages.mean()) / advantages.std()
 
     action_means, action_log_stds, action_stds = policy_net(Variable(states))
-    fixed_log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds).data
+    fixed_log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds).data.clone()
 
     def get_loss(volatile=False):
         action_means, action_log_stds, action_stds = policy_net(Variable(states, volatile=volatile))
@@ -128,7 +121,7 @@ def update_params(batch):
         log_std0 = Variable(log_std1.data)
         std0 = Variable(std1.data)
         kl = log_std1 - log_std0 + (std0.pow(2) + (mean0 - mean1).pow(2)) / (2.0 * std1.pow(2)) - 0.5
-        return kl.sum(1)
+        return kl.sum(1, keepdim=True)
 
     trpo_step(policy_net, get_loss, get_kl, args.max_kl, args.damping)
 

@@ -50,7 +50,7 @@ def linesearch(model,
 
 def trpo_step(model, get_loss, get_kl, max_kl, damping):
     loss = get_loss()
-    grads = torch.autograd.grad(loss, model.parameters(), create_graph=True)
+    grads = torch.autograd.grad(loss, model.parameters())
     loss_grad = torch.cat([grad.view(-1) for grad in grads]).data
 
     def Fvp(v):
@@ -68,12 +68,12 @@ def trpo_step(model, get_loss, get_kl, max_kl, damping):
 
     stepdir = conjugate_gradients(Fvp, -loss_grad, 10)
 
-    shs = 0.5 * (stepdir * Fvp(stepdir)).sum(0)
+    shs = 0.5 * (stepdir * Fvp(stepdir)).sum(0, keepdim=True)
 
     lm = torch.sqrt(shs / max_kl)
     fullstep = stepdir / lm[0]
 
-    neggdotstepdir = (-loss_grad * stepdir).sum(0)
+    neggdotstepdir = (-loss_grad * stepdir).sum(0, keepdim=True)
     print(("lagrange multiplier:", lm[0], "grad_norm:", loss_grad.norm()))
 
     prev_params = get_flat_params_from(model)
