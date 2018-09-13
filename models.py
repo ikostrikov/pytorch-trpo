@@ -1,7 +1,6 @@
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class Policy(nn.Module):
@@ -21,8 +20,8 @@ class Policy(nn.Module):
         self.final_value = 0
 
     def forward(self, x):
-        x = F.tanh(self.affine1(x))
-        x = F.tanh(self.affine2(x))
+        x = torch.tanh(self.affine1(x))
+        x = torch.tanh(self.affine2(x))
 
         action_mean = self.action_mean(x)
         action_log_std = self.action_log_std.expand_as(action_mean)
@@ -41,8 +40,8 @@ class Value(nn.Module):
         self.value_head.bias.data.mul_(0.0)
 
     def forward(self, x):
-        x = F.tanh(self.affine1(x))
-        x = F.tanh(self.affine2(x))
+        x = torch.tanh(self.affine1(x))
+        x = torch.tanh(self.affine2(x))
 
         state_values = self.value_head(x)
         return state_values

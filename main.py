@@ -97,7 +97,7 @@ def update_params(batch):
         for param in value_net.parameters():
             value_loss += param.pow(2).sum() * args.l2_reg
         value_loss.backward()
-        return (value_loss.data.double().numpy()[0], get_flat_grad_from(value_net).data.double().numpy())
+        return (value_loss.data.double().numpy(), get_flat_grad_from(value_net).data.double().numpy())
 
     flat_params, _, opt_info = scipy.optimize.fmin_l_bfgs_b(get_value_loss, get_flat_params_from(value_net).double().numpy(), maxiter=25)
     set_flat_params_to(value_net, torch.Tensor(flat_params))
@@ -108,7 +108,12 @@ def update_params(batch):
     fixed_log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds).data.clone()
 
     def get_loss(volatile=False):
-        action_means, action_log_stds, action_stds = policy_net(Variable(states, volatile=volatile))
+        if volatile:
+            with torch.no_grad():
+                action_means, action_log_stds, action_stds = policy_net(Variable(states))
+        else:
+            action_means, action_log_stds, action_stds = policy_net(Variable(states))
+                
         log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds)
         action_loss = -Variable(advantages) * torch.exp(log_prob - Variable(fixed_log_prob))
         return action_loss.mean()
